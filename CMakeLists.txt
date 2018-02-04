@@ -1,4 +1,7 @@
+cmake_minimum_required(VERSION 3.9)
 project(streams)
 include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
-add_executable(streams ${SOURCES})
+add_executable(clustreetest tests/clustreetest.cpp)
+enable_testing()
+add_test(clustreetest clustreetest)
