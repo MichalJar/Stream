@@ -61,8 +61,7 @@ private:
         }
         else 
         {
-            n_ptr->childs[i] = create_new_leaf(cf_created_from_element, n_ptr->cluster_features[i]);
-            update(n_ptr->cluster_features[i], cf_created_from_element);
+            split(n_ptr, cf_created_from_element);
         }
     }
 
@@ -76,11 +75,12 @@ private:
         std::tie(cf_i, cf_y) = get_nearest_cfs_in(cfs);
 
         node_ptr new_n_ptr = std::make_shared<node>();
-        new_n_ptr->cluster_features.push_back(cfs[cf_i], cfs[cf_y]);
+        new_n_ptr->cluster_features.push_back(cfs[cf_i]);
+        new_n_ptr->cluster_features.push_back(cfs[cf_y]);
         new_n_ptr->childs.push_back(nullptr);
         new_n_ptr->childs.push_back(nullptr);
 
-        n_ptr->childs = new_n_ptr;
+        n_ptr->childs[cf_i] = new_n_ptr;
         update(cfs[cf_i],cfs[cf_y]);
         cfs.erase(std::begin(cfs) + cf_y);
     }
@@ -97,7 +97,7 @@ private:
             for(int y=i+1;y<cfs.size();y++)
             {
                 auto nd = distance(cfs[i],cfs[y]);
-                if(d > nd)
+                if(d >= nd)
                 {
                     d = nd;
                     cf_i = i;
