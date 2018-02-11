@@ -83,7 +83,7 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     element e8{6.0,14.0};    
     element e9{13.0,14.0};
     element e10{15.0,14.0};
-    element e11{15.0,13.0};
+    element e11{13.0,13.0};
 
     sg.add_element(e0);
     sg.add_element(e1);
