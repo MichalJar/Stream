@@ -7,6 +7,8 @@
 
 #define TEST_LINK_EXISTANCE(links, a, b, length) REQUIRE(test_links(links, a,b,length));
 
+#define TEST_LINK_NO_EXISTANCE(links, a, b, length) REQUIRE(!test_links(links, a,b,length))
+
 struct element
 {
     double x,y;
@@ -116,6 +118,55 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     sg.add_element(e10);
     sg.add_element(e11);
 
+    TEST_LINK_EXISTANCE(sg.get_model(), 3,4,sqrt(5));
+    TEST_LINK_EXISTANCE(sg.get_model(), 4,5,1.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 5,6,sqrt(5.0));
+    TEST_LINK_EXISTANCE(sg.get_model(), 6,7,3.0);
+
+    TEST_LINK_EXISTANCE(sg.get_model(), 7,8,sqrt(2));
+    TEST_LINK_EXISTANCE(sg.get_model(), 8,9,7.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 9,10,2.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 9,11,1.0);
+
+    TEST_LINK_EXISTANCE(sg.get_model(), 0,1,1.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 1,2,2.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 2,3,2.0);
+}
+
+TEST_CASE("subgraph creation, adding 16 elements (three chunks) and remove oldest chunks", "[subgraph]")
+{
+    stream::subgraph<element> sg(4, distance_between_elems);
+
+    element e0{1.0,2.0};
+    element e1{1.0,3.0};
+    element e2{1.0,5.0};
+    element e3{3.0,5.0};
+    
+    element e4{4.0,7.0};
+    element e5{4.0,8.0};
+    element e6{5.0,10.0};
+    element e7{5.0,13.0};
+
+    element e8{6.0,14.0};    
+    element e9{13.0,14.0};
+    element e10{15.0,14.0};
+    element e11{13.0,13.0};
+
+    sg.add_element(e0);
+    sg.add_element(e1);
+    sg.add_element(e2);
+    sg.add_element(e3);
+
+    sg.add_element(e4);
+    sg.add_element(e5);
+    sg.add_element(e6);
+    sg.add_element(e7);
+
+    sg.add_element(e8);
+    sg.add_element(e9);
+    sg.add_element(e10);
+    sg.add_element(e11);
+
     TEST_LINK_EXISTANCE(sg.get_model(), 0,1,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 1,2,2.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 2,3,2.0);
@@ -129,4 +180,20 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     TEST_LINK_EXISTANCE(sg.get_model(), 8,9,7.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 9,10,2.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 9,11,1.0);
+
+    sg.remove_oldest_chunk();
+
+    TEST_LINK_EXISTANCE(sg.get_model(), 4,5,1.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 5,6,sqrt(5.0));
+    TEST_LINK_EXISTANCE(sg.get_model(), 6,7,3.0);
+
+    TEST_LINK_EXISTANCE(sg.get_model(), 7,8,sqrt(2));
+    TEST_LINK_EXISTANCE(sg.get_model(), 8,9,7.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 9,10,2.0);
+    TEST_LINK_EXISTANCE(sg.get_model(), 9,11,1.0);
+
+    TEST_LINK_NO_EXISTANCE(sg.get_model(), 0,1,1.0);
+    TEST_LINK_NO_EXISTANCE(sg.get_model(), 1,2,2.0);
+    TEST_LINK_NO_EXISTANCE(sg.get_model(), 2,3,2.0);
+    TEST_LINK_NO_EXISTANCE(sg.get_model(), 3,4,sqrt(5));
 }

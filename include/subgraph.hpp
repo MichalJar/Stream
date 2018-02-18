@@ -43,17 +43,39 @@ public:
             update_model();   
         }
     }
-
+    const std::vector<link> & get_model()
+    {
+        return model;
+    }
+    void remove_oldest_chunk()
+    {
+        elem_num -= (*chunks.begin())->size;
+        chunks.erase(std::begin(chunks));
+        for(auto chunk_ptr: chunks)
+        {
+            chunk_ptr->interlink_chunks.pop_back();
+        }
+        update_links_in_model();
+    }
+    int input_buffer_size()
+    {
+        return input_buffer.size();
+    }
+    int chunks_num()
+    {
+        return chunks.size();
+    }
+private:
     void update_model()
     {
         auto chunk_ptr = create_new_chunk();
+        
         elem_num += chunk_ptr->size;
+        
         compute_chunk_interlinks(chunk_ptr);
         compute_chunk_inside_links(chunk_ptr);
-
-        chunks.push_back(chunk_ptr);
         
-
+        chunks.push_back(chunk_ptr);
         update_links_in_model();
     }
     
@@ -70,6 +92,7 @@ public:
             std::copy(std::begin(chunk_ptr->links), std::end(chunk_ptr->links), inserter);
         }
         std::sort(std::begin(model), std::end(model), [](const auto & l, const auto & r){return l.lenght < r.lenght; });
+        std::cout << "start filter by kruskal" << std::endl;
         filter_by_kruskal(model);
     }
     class color_table
@@ -79,7 +102,7 @@ public:
         {
             for(unsigned i=0; i < table.size(); i++)
             {
-                table[i] = i;
+                table[i] = i+index_start;
             }
         }
         void connect(unsigned a, unsigned b)
@@ -143,9 +166,9 @@ public:
 
     void compute_chunk_interlinks(std::shared_ptr<chunk> chunk_ptr)
     {
-        for(const auto & other_chunk_ptr: chunks)
+        for(auto other_chunk_ptr_i = std::rbegin(chunks); other_chunk_ptr_i != std::rend(chunks); other_chunk_ptr_i++)
         {
-            compute_links_between(chunk_ptr, other_chunk_ptr);
+            compute_links_between(chunk_ptr, *other_chunk_ptr_i);
         }
     }
     void compute_links_between(std::shared_ptr<chunk> new_chunk_ptr, std::shared_ptr<chunk> other_chunk_ptr)
@@ -245,7 +268,6 @@ public:
             last_inserted_to_mst_i = best;
         }
     }
-
     unsigned find_min_distance_index(const std::vector<double> & distances, const std::vector<bool> & out_of_mst) const
     {
         unsigned best = 1;
@@ -260,7 +282,6 @@ public:
         }
         return best;
     }
-
     std::shared_ptr<chunk> create_new_chunk()
     {
         auto chunk_ptr = std::make_shared<chunk>(global_index, chunk_size);
@@ -268,20 +289,6 @@ public:
         global_index += chunk_ptr->size;
         return chunk_ptr;
     }
-
-    int input_buffer_size()
-    {
-        return input_buffer.size();
-    }
-    int chunks_num()
-    {
-        return chunks.size();
-    }
-    const std::vector<link> & get_model()
-    {
-        return model;
-    }
-private:
     std::vector<E> input_buffer;
     std::vector<std::shared_ptr<chunk>> chunks;
 
