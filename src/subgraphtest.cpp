@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
-#include <subgraph.hpp>
+#include "subgraph.hpp"
 #include <cmath>
 #include <algorithm>
 
@@ -59,6 +59,7 @@ TEST_CASE("subgraph creation and adding five elems - first simple clusterization
     sg.add_element(e4);
     sg.add_element(e5);
 
+    sg.update_links_in_model();
     REQUIRE(sg.chunks_num() == 1);
     REQUIRE(sg.input_buffer_size() == 0);
 
@@ -93,7 +94,7 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     sg.add_element(e3);
 
     //
-
+    sg.update_links_in_model();
     TEST_LINK_EXISTANCE(sg.get_model(), 0,1,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 1,2,2.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 2,3,2.0);
@@ -103,7 +104,7 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     sg.add_element(e6);
     sg.add_element(e7);
 
-
+    sg.update_links_in_model();
     TEST_LINK_EXISTANCE(sg.get_model(), 0,1,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 1,2,2.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 2,3,2.0);
@@ -118,6 +119,7 @@ TEST_CASE("subgraph creation and adding 16 elements - after every chunk - the mo
     sg.add_element(e10);
     sg.add_element(e11);
 
+    sg.update_links_in_model();
     TEST_LINK_EXISTANCE(sg.get_model(), 3,4,sqrt(5));
     TEST_LINK_EXISTANCE(sg.get_model(), 4,5,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 5,6,sqrt(5.0));
@@ -167,6 +169,7 @@ TEST_CASE("subgraph creation, adding 16 elements (three chunks) and remove oldes
     sg.add_element(e10);
     sg.add_element(e11);
 
+    sg.update_links_in_model();
     TEST_LINK_EXISTANCE(sg.get_model(), 0,1,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 1,2,2.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 2,3,2.0);
@@ -182,7 +185,7 @@ TEST_CASE("subgraph creation, adding 16 elements (three chunks) and remove oldes
     TEST_LINK_EXISTANCE(sg.get_model(), 9,11,1.0);
 
     sg.remove_oldest_chunk();
-
+    sg.update_links_in_model();
     TEST_LINK_EXISTANCE(sg.get_model(), 4,5,1.0);
     TEST_LINK_EXISTANCE(sg.get_model(), 5,6,sqrt(5.0));
     TEST_LINK_EXISTANCE(sg.get_model(), 6,7,3.0);

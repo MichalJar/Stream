@@ -2,9 +2,9 @@
 #include <functional>
 #include <algorithm>
 #include <tuple>
+#include <cmath>
 
 namespace stream{
-
 template<typename CF>
 class clustree
 {
@@ -160,4 +160,33 @@ private:
     update_cf update;
     distance_between_cf distance;
 };
+
+struct StandardCF
+{
+    double ls[2];
+    double ss[2];
+    unsigned n;
+};
+
+void update_cf(StandardCF & cluster_feature, const StandardCF& new_element)
+{
+    cluster_feature.n +=  new_element.n;
+    cluster_feature.ss[0] += new_element.ss[0];
+    cluster_feature.ss[1] += new_element.ss[1];
+
+    cluster_feature.ls[0] += new_element.ls[0];
+    cluster_feature.ls[1] += new_element.ls[1];
+}
+
+double distance_between_cf(const StandardCF & cf_a, const StandardCF & cf_b)
+{
+    double a[2] = {0,0};
+    a[0] = cf_a.ls[0] / cf_a.n;
+    a[1] = cf_a.ls[1] / cf_a.n;
+    double b[2] = {0,0};
+    b[0] = cf_b.ls[0] / cf_b.n;
+    b[1] = cf_b.ls[1] / cf_b.n;
+    double d = (a[0] - b[0])*(a[0] - b[0]) + (a[1] - b[1])*(a[1] - b[1]);
+    return std::sqrt(d);
+}
 }

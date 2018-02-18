@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
-#include <clustree.hpp>
+#include "clustree.hpp"
 #include <cmath>
 
 struct cluster_feature

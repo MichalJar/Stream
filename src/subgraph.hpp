@@ -69,16 +69,13 @@ private:
     void update_model()
     {
         auto chunk_ptr = create_new_chunk();
-        
         elem_num += chunk_ptr->size;
-        
         compute_chunk_interlinks(chunk_ptr);
         compute_chunk_inside_links(chunk_ptr);
-        
         chunks.push_back(chunk_ptr);
-        update_links_in_model();
+        //update_links_in_model();
     }
-    
+public:
     void update_links_in_model()
     {
         model.clear();
@@ -91,8 +88,8 @@ private:
             }
             std::copy(std::begin(chunk_ptr->links), std::end(chunk_ptr->links), inserter);
         }
+        //std::cout << model.size() << " ---|||---" << std::endl;
         std::sort(std::begin(model), std::end(model), [](const auto & l, const auto & r){return l.lenght < r.lenght; });
-        std::cout << "start filter by kruskal" << std::endl;
         filter_by_kruskal(model);
     }
     class color_table
@@ -102,37 +99,41 @@ private:
         {
             for(unsigned i=0; i < table.size(); i++)
             {
-                table[i] = i+index_start;
+                table[i] = i;
             }
         }
         void connect(unsigned a, unsigned b)
         {
             if(a == b) return;
             if(a > b) connect(b, a);
-            if(table[a-index_start] == a)
+            a = a - index_start;
+            b = b - index_start;
+            if(table[a] == a)
             {
-                table[b-index_start] = a;
+                table[b] = a;
             }
             else
             {
-                table[b-index_start] = find_parent(a);
+                auto b_parent = find_parent(b);
+                table[b_parent] = find_parent(a);
             }
         }
         unsigned find_parent(unsigned i)
         {
-            if(i == table[i-index_start])
+            if(i == table[i])
             {
                 return i;
             }
             else
             {
-                table[i-index_start] = find_parent(table[i-index_start]);
-                return table[i-index_start];
+                table[i] = find_parent(table[i]);
+                return table[i];
             }
         }
-
         bool are_connected(unsigned a, unsigned b)
         {
+            a = a - index_start;
+            b = b - index_start;
             return find_parent(a) == find_parent(b);
         }
     private:
@@ -144,10 +145,8 @@ private:
     {
         auto insert_iter = std::begin(links);
         auto iter = std::begin(links);
-        
         color_table ct(chunks[0]->index, elem_num);
         unsigned last_inserted_i = 0;
-
         unsigned n=0;
         while(n<(elem_num-1))
         {
@@ -218,7 +217,6 @@ private:
             }
         }
     }
-
     void update_distances_by(const E & last_inserted_element, 
     const unsigned last_inserted_element_index,
     const std::vector<E> & elements, 
@@ -249,7 +247,6 @@ private:
         out_of_mst[0] = false;
 
         unsigned last_inserted_to_mst_i = 0;
-        
         for(unsigned i=1; i<elements.size(); i++)
         {
             for(unsigned y=0; y<elements.size(); y++)
@@ -261,11 +258,8 @@ private:
                     ids[y] = last_inserted_to_mst_i;
                 }
             }
-
             unsigned best = find_min_distance_index(distances, out_of_mst);
-
             links.push_back(link(ids[best] + chunk_ptr->index, best + chunk_ptr->index, distances[best]));
-
             out_of_mst[best] = false;
             last_inserted_to_mst_i = best;
         }
@@ -293,15 +287,11 @@ private:
     }
     std::vector<E> input_buffer;
     std::vector<std::shared_ptr<chunk>> chunks;
-
     int chunk_size;
     unsigned global_index = 0;
-    
     distance_between_elems distance;
-
     std::vector<link> model;
     bool model_is_actual = false;
-
     unsigned elem_num;
 };
 }
