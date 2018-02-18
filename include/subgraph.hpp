@@ -194,31 +194,14 @@ private:
         {
             if(last_elem_from_left)
             {
-                for(unsigned y=0; y<r_elements.size(); y++)
-                {
-                    auto d = distance(l_elements[last_inserted_to_mst_i], r_elements[y]);
-                    if(r_out_of_mst[y] && d < r_distances[y])
-                    {
-                        r_distances[y] = d;
-                        r_ids[y] = last_inserted_to_mst_i;
-                    }
-                }
+                update_distances_by(l_elements[last_inserted_to_mst_i], last_inserted_to_mst_i, r_elements, r_out_of_mst, r_ids, r_distances);
             }
             else
             {
-                for(unsigned y=0; y<l_elements.size(); y++)
-                {
-                    auto d = distance(r_elements[last_inserted_to_mst_i], l_elements[y]);
-                    if(l_out_of_mst[y] && d < l_distances[y])
-                    {
-                        l_distances[y] = d;
-                        l_ids[y] = last_inserted_to_mst_i;
-                    }
-                }
+                update_distances_by(r_elements[last_inserted_to_mst_i], last_inserted_to_mst_i, l_elements, l_out_of_mst, l_ids, l_distances);
             }
             auto l_best_i = find_min_distance_index(l_distances, l_out_of_mst);
             auto r_best_i = find_min_distance_index(r_distances, r_out_of_mst);
-
             if(l_distances[l_best_i] < r_distances[r_best_i])
             {
                 new_chunk_ptr->interlink_chunks.back().push_back( link(l_best_i+new_chunk_ptr->index, l_ids[l_best_i]+other_chunk_ptr->index, l_distances[l_best_i]) );
@@ -235,6 +218,25 @@ private:
             }
         }
     }
+
+    void update_distances_by(const E & last_inserted_element, 
+    const unsigned last_inserted_element_index,
+    const std::vector<E> & elements, 
+    const std::vector<bool> & out_of_mst,
+    std::vector<unsigned> & ids,
+    std::vector<double> & distances)
+    {
+        for(unsigned y=0; y<elements.size(); y++)
+        {
+            auto d = distance(last_inserted_element, elements[y]);
+            if(out_of_mst[y] && d < distances[y])
+            {
+                ids[y] = last_inserted_element_index;
+                distances[y] = d;
+            }
+        }
+    }
+
     void compute_chunk_inside_links(std::shared_ptr<chunk> chunk_ptr)
     {
         const auto & elements = chunk_ptr->elements;
