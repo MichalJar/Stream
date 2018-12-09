@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <tuple>
 #include <cmath>
+#include <vector>
+#include <iterator>
 
 namespace stream{
 template<typename CF>
@@ -28,10 +30,12 @@ public:
         distance(distance)
     {
         root = std::make_shared<node>();
+        node_num = 0;
     }
 
     void add_element(const CF & cf_created_from_element)
     {
+        node_num++;
         if(root->cluster_features.size() == 0)
         {
             root->cluster_features.push_back( cf_created_from_element );
@@ -41,6 +45,44 @@ public:
         {
             add_element_to_no_empty_tree(cf_created_from_element);
         }
+    }
+
+    int get_node_num() const
+    {
+        return node_num;
+    }
+
+    std::vector<CF> get_cfs()
+    {
+        std::vector<CF> cfs;
+        std::vector<node_ptr> stack;
+        stack.reserve(node_num);
+
+        stack.push_back(root);
+
+        while(! stack.empty())
+        {
+            auto last = stack.back();
+
+            for(const auto& cf: last->cluster_features)
+            {
+                cfs.push_back(cf);
+            }
+
+            stack.pop_back();
+
+            auto riter = std::rbegin(last->childs);
+            
+            while(riter != std::rend(last->childs))
+            {
+                if(*riter != nullptr)
+                {
+                    stack.push_back(*riter);
+                }
+                riter++;
+            }
+        }
+        return cfs;
     }
 
     node_ptr root;
@@ -159,6 +201,7 @@ private:
     const double cf_max_diameter;
     update_cf update;
     distance_between_cf distance;
+    unsigned int node_num;
 };
 
 struct StandardCF

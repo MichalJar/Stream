@@ -11,8 +11,8 @@ public:
     struct link
     {
         link(unsigned a, unsigned b, double lenght): a(a), b(b), lenght(lenght) {}
-        unsigned a;
-        unsigned b;
+        uint32_t a;
+        uint32_t b;
         double lenght;
         bool operator==(const link & l) const {return a == l.a && b == l.b && lenght == l.lenght;}
     };
@@ -32,17 +32,15 @@ private:
         std::vector<std::vector<link>> interlink_chunks;
     };
 public:    
-    subgraph(unsigned chunk_size, distance_between_elems distance): chunk_size(chunk_size), distance(distance), elem_num(0)
+    subgraph(distance_between_elems distance): distance(distance), elem_num(0)
     {
     }
-    void add_element(const E & element)
+
+    void add_elements(std::vector<E> elements)
     {
-        input_buffer.push_back(element);
-        if(input_buffer.size() >= chunk_size)
-        {
-            update_model();   
-        }
+        update_model(std::move(elements));
     }
+
     const std::vector<link> & get_model()
     {
         return model;
@@ -66,14 +64,13 @@ public:
         return chunks.size();
     }
 private:
-    void update_model()
+    void update_model(std::vector<E>&& elements)
     {
-        auto chunk_ptr = create_new_chunk();
+        auto chunk_ptr = create_new_chunk(std::move(elements));
         elem_num += chunk_ptr->size;
         compute_chunk_interlinks(chunk_ptr);
         compute_chunk_inside_links(chunk_ptr);
         chunks.push_back(chunk_ptr);
-        //update_links_in_model();
     }
 public:
     void update_links_in_model()
@@ -88,69 +85,74 @@ public:
             }
             std::copy(std::begin(chunk_ptr->links), std::end(chunk_ptr->links), inserter);
         }
-        //std::cout << model.size() << " ---|||---" << std::endl;
         std::sort(std::begin(model), std::end(model), [](const auto & l, const auto & r){return l.lenght < r.lenght; });
         filter_by_kruskal(model);
     }
-    class color_table
+
+    class disjoint_sets
     {
     public:
-        color_table(unsigned start, const unsigned num): table(num,0), index_start(start)
+        disjoint_sets(unsigned start, const unsigned num): parentOf(num,0), sizeOfSet(num,1), start(start)
         {
-            for(unsigned i=0; i < table.size(); i++)
+            for(unsigned i=0; i<parentOf.size(); i++)
             {
-                table[i] = i;
+                parentOf[i] = start+i;
             }
         }
-        void connect(unsigned a, unsigned b)
+
+        bool areConnected(unsigned elemIndexA, unsigned elemIndexB)
         {
-            if(a == b) return;
-            if(a > b) connect(b, a);
-            a = a - index_start;
-            b = b - index_start;
-            if(table[a] == a)
+            return getParentOf(elemIndexA) == getParentOf(elemIndexB);
+        }
+
+        void connect(unsigned elemIndexA, unsigned elemIndexB)
+        {
+            auto parentOfA = getParentOf(elemIndexA);
+            auto parentOfB = getParentOf(elemIndexB);
+
+            if(sizeOfSet[parentOfA - start] >= sizeOfSet[parentOfB - start])
             {
-                table[b] = a;
+                setParentOf(parentOfA, parentOfB);
+                sizeOfSet[parentOfA - start] += sizeOfSet[parentOfB - start];
             }
             else
             {
-                auto b_parent = find_parent(b);
-                table[b_parent] = find_parent(a);
+                sizeOfSet[parentOfB - start] += sizeOfSet[parentOfA - start];
+                setParentOf(parentOfB, parentOfA);
             }
-        }
-        unsigned find_parent(unsigned i)
-        {
-            if(i == table[i])
-            {
-                return i;
-            }
-            else
-            {
-                table[i] = find_parent(table[i]);
-                return table[i];
-            }
-        }
-        bool are_connected(unsigned a, unsigned b)
-        {
-            a = a - index_start;
-            b = b - index_start;
-            return find_parent(a) == find_parent(b);
         }
     private:
-        const unsigned index_start;
-        std::vector<unsigned> table;
-    };
+        unsigned getParentOf(unsigned elemIndex)
+        {
+            if(parentOf[elemIndex - start] == elemIndex)
+            {
+                return parentOf[elemIndex - start];
+            }
+            
+            parentOf[elemIndex - start] = getParentOf(parentOf[elemIndex-start]);
 
+            return parentOf[elemIndex - start];
+        }
+
+        unsigned setParentOf(unsigned elemIndex, unsigned newParent)
+        {
+            parentOf[elemIndex - start] = newParent;
+        }
+
+        std::vector<unsigned> parentOf;
+        std::vector<unsigned> sizeOfSet;
+        unsigned start;
+    };
     void filter_by_kruskal(std::vector<link> & links)
     {
         auto insert_iter = std::begin(links);
         auto iter = std::begin(links);
-        color_table ct(chunks[0]->index, elem_num);
+        disjoint_sets ct(chunks[0]->index, elem_num);
         unsigned last_inserted_i = 0;
         unsigned n=0;
         while(n<(elem_num-1))
         {
-            if(! ct.are_connected(iter->a, iter->b))
+            if(! ct.areConnected(iter->a, iter->b))
             {
                 *insert_iter = *iter;
                 insert_iter++;
@@ -160,7 +162,7 @@ public:
             iter++;
 
         }
-        model.erase(std::begin(model) + elem_num-1, std::end(model));
+        links.erase(std::begin(model) + elem_num-1, std::end(model));
     }
 
     void compute_chunk_interlinks(std::shared_ptr<chunk> chunk_ptr)
@@ -278,16 +280,15 @@ public:
         }
         return best;
     }
-    std::shared_ptr<chunk> create_new_chunk()
+    std::shared_ptr<chunk> create_new_chunk(std::vector<E> && elements)
     {
-        auto chunk_ptr = std::make_shared<chunk>(global_index, chunk_size);
-        chunk_ptr->elements = std::move(input_buffer);
+        auto chunk_ptr = std::make_shared<chunk>(global_index, elements.size());
+        chunk_ptr->elements = std::move(elements);
         global_index += chunk_ptr->size;
         return chunk_ptr;
     }
     std::vector<E> input_buffer;
     std::vector<std::shared_ptr<chunk>> chunks;
-    int chunk_size;
     unsigned global_index = 0;
     distance_between_elems distance;
     std::vector<link> model;
